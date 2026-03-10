@@ -1,6 +1,6 @@
-#include <qframe.h>
-#include <qpixmap.h>
-#include <qpainter.h>
+#include <QFrame>
+#include <QPixmap>
+#include <QPainter>
 
 #ifndef __FORM_8Q_H__
 #define __FORM_8Q_H__
@@ -27,9 +27,6 @@ public:
 	    p.drawRect(j*(width()/4)+(i%2)*width()/8,i*(height()/8),width()/8,height()/8);
 	//setErasePixmap(*backgr);
 	p.end();
-	QPainter p1(backgr1);
-	p1.drawPixmap(0,0,*backgr);
-	p1.end();
 	showInfo();
 	setWindowTitle("8Q - Let's go");
     };
@@ -44,6 +41,7 @@ protected:
     QPixmap *backgr,*backgr1;
     QPoint mas[8];
     void mousePressEvent(QMouseEvent *ev);
+    void keyPressEvent(QKeyEvent *ev);
     void paintEvent(QPaintEvent *ev);
     int  num_point_fill(int r, int c);
     void drawFZ(int r, int c);

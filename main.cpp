@@ -1,4 +1,4 @@
-#include <qapplication.h>
+#include <QApplication>
 #include "form8q.h"
 
 int width0,height0;
@@ -9,7 +9,7 @@ int main(int argc, char **argv)
     
     if (argc>1) {
 	width0 = height0 = atoi(argv[1]);
-    } else width0 = height0 = 216;
+    } else width0 = height0 = 432;
     
     FormQ8 form8;
     form8.show();

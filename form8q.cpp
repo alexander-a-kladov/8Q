@@ -1,5 +1,6 @@
 #include "form8q.h"
 #include <QMouseEvent>
+#include <QKeyEvent>
 
 int FormQ8::num_point_fill(int r, int c)
 {
@@ -22,6 +23,9 @@ bool FormQ8::is_this_point_enable(int r, int c)
 
 void FormQ8::showInfo()
 {
+    QPainter p1(backgr1);
+    p1.drawPixmap(0,0,*backgr);
+    p1.end();
     QPainter p(backgr1);
     QFont font=p.font();
     font.setBold(true);
@@ -69,6 +73,16 @@ void FormQ8::drawFZ(int r, int c)
     p.drawLine(c*(width()/8)+width()/16,r*(height()/8)+height()/16,
 		(c-v)*(width()/8),(r-v)*(height()/8));
     return;
+}
+
+void FormQ8::keyPressEvent(QKeyEvent *ev)
+{
+    if (ev->key() == Qt::Key_Space) {
+	q = 0;
+	showInfo();
+    } else {
+	QWidget::keyPressEvent(ev);
+    }
 }
 
 void FormQ8::mousePressEvent(QMouseEvent *ev)
