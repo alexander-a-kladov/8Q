@@ -1,7 +1,7 @@
     DEVICE ZXSPECTRUM48
     
     ORG	 #4000
-;    incbin "8queenscr.bin"
+    incbin "8queenscr.bin"
     ORG  $8000
     
 START:	CALL	BOARD
@@ -54,7 +54,7 @@ WAIT3:	CP	5	; O
 WAIT4:	CP	1	; SPACE
 	JR	NZ,WAIT_END
 	CALL	QUEENS ;XOR OLD SET
-WAIT_END:	LD	B,2
+WAIT_END:	LD	B,4
 WAIT_CYCLE:	HALT
 		DJNZ WAIT_CYCLE
 	JR	WAIT
@@ -76,9 +76,9 @@ COL:
 	XOR	E
 	AND	1
 	JR	Z,EMPTY1
-	LD	A,%00101000
+	LD	A,%01011000	; "Black" square
 	JR	FILL1
-EMPTY1:	LD	A,%00111000
+EMPTY1:	LD	A,%00111000	; "White" square
 FILL1:	LD	(HL),A	
 	INC	HL
 	DJNZ	COL
@@ -267,7 +267,7 @@ KEYBOARD_READ:
 NO_SPACE:
     LD BC, #FBFE  ; Строка QAZ (Q=бит0, A=бит1)
     IN A, (C)
-    BIT 0, A
+    BIT 1, A
     JR NZ, NO_Q
     LD A, 2         ; Q нажата
     RET
@@ -294,7 +294,7 @@ NO_O:
     LD A, 0         ; Ничего не нажато
     RET
 
-MARKER_COLOR:	DB	%00100111
+MARKER_COLOR:	DB	%00100001
 MARKER_BACK:	DB	0,0,0,0,0,0,0,0	
 QUEENS_ROW:	DB	0
 QUEENS_COL:	DB	0
@@ -308,9 +308,18 @@ QUEENS_POS:	DB	#15,#86,#37,#24
 		DB	#85,#16,#37,#24
 
 SAVE_SP:	DW	0
-QUEEN_SPR:	DB $00, $00, $03, $c0, $0f, $f0, $1f, $f8
+QUEEN_SPR1:	DB $00, $00, $03, $c0, $0f, $f0, $1f, $f8
   		DB $3f, $fc, $3f, $fc, $7f, $fe, $7f, $fe
 		DB $7f, $fe, $7f, $fe, $3f, $fc, $3f, $fc
 		DB $1f, $f8, $0f, $f0, $03, $c0, $00, $00
+QUEEN_SPR2:	DW $ffff, $ffff, $ffff, $ffff
+		DW $ffff, $ffff, $ffff, $ffff
+		DW $ffff, $ffff, $ffff, $ffff
+		DW $ffff, $ffff, $ffff, $ffff
+QUEEN_SPR:	DW $0000, $fe7f, $fe7f, $fe7f
+		DW $fe7f, $fe7f, $fe7f, $fe7f
+		DW $fe7f, $fe7f, $fe7f, $fe7f
+		DW $fe7f, $fe7f, $fe7f, $0000
+
 
 	SAVESNA "chessboard.sna", START
