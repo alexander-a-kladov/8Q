@@ -1,10 +1,13 @@
     DEVICE ZXSPECTRUM48
     
     ORG	 #4000
-    incbin "8queenscr.bin"
+;    incbin "8queenscr.bin"
+
+    
     ORG  $8000
     
-START:	CALL	BOARD
+START:	CALL	CALC_AND_DRAW+2	; CALL CALC_AND_DRAW from 8queen.bin see below, 2 bytes for queen's results addr
+	CALL	BOARD
 	LD	A,1
 	CALL	DRAW_MARKER
 	CALL	QUEENS
@@ -24,7 +27,7 @@ WAIT:	CALL	KEYBOARD_READ
 WAIT1:	CP	3	; A
 	JR	NZ,WAIT2
 	LD	A,(QUEENS_ROW)
-	CP	1	; 1 CHESS TOP BOUNDARY NUMBER
+	CP	22	; 1 CHESS TOP BOUNDARY NUMBER
 	JR	Z,WAIT_END
 	CALL	ERASE_SET
 	LD	HL,QUEENS_ROW
@@ -149,7 +152,7 @@ DRAW_R1:
 	
 	
 QUEENS:	
-	LD	DE,QUEENS_POS	; DRAW ALL QUEENS IN SET
+	LD	DE,(CALC_AND_DRAW)	; DRAW ALL QUEENS IN SET
 	LD	A,(QUEENS_ROW)
 	LD	H,0
 	LD	L,A
@@ -298,7 +301,8 @@ MARKER_COLOR:	DB	%00100001
 MARKER_BACK:	DB	0,0,0,0,0,0,0,0	
 QUEENS_ROW:	DB	0
 QUEENS_COL:	DB	0
-QUEENS_POS:	DB	#15,#86,#37,#24
+QUEENS_POS:	DW	0		; Address from "8queen.bin" has to be copied here
+		DB	#15,#86,#37,#24
 		DB	#25,#86,#37,#14
 		DB	#35,#86,#17,#24
 		DB	#45,#86,#37,#21
@@ -321,5 +325,8 @@ QUEEN_SPR:	DW $0000, $fe7f, $fe7f, $fe7f
 		DW $fe7f, $fe7f, $fe7f, $fe7f
 		DW $fe7f, $fe7f, $fe7f, $0000
 
+	ORG	 $8600
+CALC_AND_DRAW:	incbin	"8queen.bin"
 
+	SAVEBIN "chessboard.bin",START,$-START
 	SAVESNA "chessboard.sna", START
