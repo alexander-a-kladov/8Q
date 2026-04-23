@@ -1,17 +1,12 @@
     DEVICE ZXSPECTRUM48
     
-    ORG	 #4000
-;    incbin "8queenscr.bin"
-
-    
     ORG  $8000
     
-START:	CALL	CALC_AND_DRAW+2	; CALL CALC_AND_DRAW from 8queen.bin see below, 2 bytes for queen's results addr
-	CALL	BOARD
+START:	EI
+	CALL	CALC_AND_DRAW+2	; CALL CALC_AND_DRAW from 8queen.bin see it's include below, 2 bytes for queens results addr
+	CALL	SAVE_SCR_SOLUTIONS	; SAVE SCREEN WITH RESULTS
 	LD	A,1
 	CALL	DRAW_MARKER
-	CALL	QUEENS
-	EI
 	; Keyboard Input
 WAIT:	CALL	KEYBOARD_READ
 	CP	2	; Q
@@ -56,11 +51,43 @@ WAIT3:	CP	5	; O
 	JR	WAIT_END
 WAIT4:	CP	1	; SPACE
 	JR	NZ,WAIT_END
-	CALL	QUEENS ;XOR OLD SET
+	LD	A,(SOLUTION_SHOWED)
+	CP	1
+	JR	NZ,WAIT5
+	LD	A,0
+	LD	(SOLUTION_SHOWED),A
+	CALL	RESTORE_SCR_SOLUTIONS
+	LD	A,1
+	CALL	DRAW_MARKER
+	JR	WAIT_END
+WAIT5:	CALL	SHOWSCR
 WAIT_END:	LD	B,4
 WAIT_CYCLE:	HALT
 		DJNZ WAIT_CYCLE
-	JR	WAIT
+	JP	WAIT
+	RET
+
+CLEARSCR: LD	HL,#4000
+	  XOR	A
+	  LD	(HL),A		; WRITE 0 IN THE FIRST BYTE OF SCREEN
+	  LD	DE,#4001
+	  LD	BC,#17ff	
+	  LDIR			; COPY 0 TO ALL BYTES OF SCREEN
+	  INC	HL
+	  INC	DE
+	  LD	A,%00111000	; WRITE A TO THE FIRST ATTRIBUTE BYTE
+	  LD	(HL),A
+	  LD	BC,#2ff
+	  LDIR			; COPY IT TO ALL BYTES OF ATTRIBUTES
+	  RET
+
+SHOWSCR:	;	SHOW CHESSBOARD
+	CALL	CLEARSCR
+	CALL	BOARD
+	LD	A,1
+	LD	(SOLUTION_SHOWED),A	; SET FLAG THAT SOLUTION IS SHOWED
+	CALL	DRAW_MARKER
+	CALL	QUEENS
 	RET
 
 BOARD:	LD	HL,#5888	;DRAW CHESS BOARD BY COLOR ATTRIBUTES
@@ -95,12 +122,20 @@ FILL1:	LD	(HL),A
 ERASE_SET:
 	LD	A,0
 	CALL	DRAW_MARKER
+	LD	A,(SOLUTION_SHOWED)
+	CP	1
+	RET	NZ
+	LD	A,0
 	CALL	QUEENS	;XOR OLD SET OF QUEENS
 	RET
 
 DRAW_SET:
 	LD	A,1
 	CALL	DRAW_MARKER
+	LD	A,(SOLUTION_SHOWED)
+	CP	1
+	RET	NZ
+	LD	A,1
 	CALL	QUEENS  ;DRAW NEW SET
 	RET
 
@@ -151,8 +186,8 @@ DRAW_R1:
 	RET
 	
 	
-QUEENS:	
-	LD	DE,(CALC_AND_DRAW)	; DRAW ALL QUEENS IN SET
+QUEENS:	; DRAW ALL QUEENS IN SET
+	LD	DE,(CALC_AND_DRAW)	; Get addr of queens results from 8queen.bin	
 	LD	A,(QUEENS_ROW)
 	LD	H,0
 	LD	L,A
@@ -260,6 +295,20 @@ DRAW_Q2:
 		POP	HL
 		RET
 
+SAVE_SCR_SOLUTIONS:
+	LD	HL,#4000
+	LD	DE,COPYSCR
+	LD	BC,#1B00
+	LDIR
+	RET
+
+RESTORE_SCR_SOLUTIONS:
+	LD	HL,COPYSCR
+	LD	DE,#4000
+	LD	BC,#1B00
+	LDIR
+	RET
+
 KEYBOARD_READ:
     LD BC, #7FFE  ; Строка Space/SHIFT (бит 0=Space)
     IN A, (C)
@@ -297,12 +346,11 @@ NO_O:
     LD A, 0         ; Ничего не нажато
     RET
 
-MARKER_COLOR:	DB	%00100001
+MARKER_COLOR:	DB	%00100000
 MARKER_BACK:	DB	0,0,0,0,0,0,0,0	
 QUEENS_ROW:	DB	0
 QUEENS_COL:	DB	0
-QUEENS_POS:	DW	0		; Address from "8queen.bin" has to be copied here
-		DB	#15,#86,#37,#24
+QUEENS_POS:	DB	#15,#86,#37,#24
 		DB	#25,#86,#37,#14
 		DB	#35,#86,#17,#24
 		DB	#45,#86,#37,#21
@@ -312,7 +360,8 @@ QUEENS_POS:	DW	0		; Address from "8queen.bin" has to be copied here
 		DB	#85,#16,#37,#24
 
 SAVE_SP:	DW	0
-QUEEN_SPR1:	DB $00, $00, $03, $c0, $0f, $f0, $1f, $f8
+SOLUTION_SHOWED	DB	0
+QUEEN_SPR:	DB $00, $00, $03, $c0, $0f, $f0, $1f, $f8
   		DB $3f, $fc, $3f, $fc, $7f, $fe, $7f, $fe
 		DB $7f, $fe, $7f, $fe, $3f, $fc, $3f, $fc
 		DB $1f, $f8, $0f, $f0, $03, $c0, $00, $00
@@ -320,13 +369,16 @@ QUEEN_SPR2:	DW $ffff, $ffff, $ffff, $ffff
 		DW $ffff, $ffff, $ffff, $ffff
 		DW $ffff, $ffff, $ffff, $ffff
 		DW $ffff, $ffff, $ffff, $ffff
-QUEEN_SPR:	DW $0000, $fe7f, $fe7f, $fe7f
+QUEEN_SPR3:	DW $0000, $fe7f, $fe7f, $fe7f
 		DW $fe7f, $fe7f, $fe7f, $fe7f
 		DW $fe7f, $fe7f, $fe7f, $fe7f
 		DW $fe7f, $fe7f, $fe7f, $0000
 
 	ORG	 $8600
 CALC_AND_DRAW:	incbin	"8queen.bin"
+	
+	ORG	$8b00
+COPYSCR	DEFB	0
 
 	SAVEBIN "chessboard.bin",START,$-START
 	SAVESNA "chessboard.sna", START
